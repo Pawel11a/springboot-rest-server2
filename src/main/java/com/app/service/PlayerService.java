@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -70,5 +71,40 @@ public class PlayerService {
 
     }
 
+    public PlayerDto updateOnlyName(Long id, Map<String, String> params) {
+
+        if (id == null) {
+            throw new AppException("id is null");
+        }
+
+        if (params == null) {
+            throw new AppException("params map is null");
+        }
+        if (!params.containsKey("name")) {
+            throw new AppException("params map doesn't contain name key");
+        }
+
+        String newName = params.get("name");
+        Player player = playerRepository.findById(id)
+                .orElseThrow(() -> new AppException("no player with id " + id));
+        player.setName(newName == null ? player.getName() : newName);
+        return ModelMapper.fromPlayerToPlayerDto(player);
+    }
+    public PlayerDto delete ( Long id ) {
+
+        if(id == null){
+            throw new AppException("id is null");
+        }
+
+        Player player = playerRepository.findById(id)
+                .orElseThrow(() -> new AppException("no player with id " + id));
+
+//        playerRepository
+//                .findAllByTeam_Id(player.getId())
+//                .forEach(p -> p.setTeam(null));
+
+        playerRepository.delete(player);
+        return ModelMapper.fromPlayerToPlayerDto(player);
+    }
 
 }
