@@ -21,7 +21,7 @@ public class Team {
     private String name;
     private Integer points;
 
-    @OneToMany(mappedBy = "team")
+    @OneToMany(mappedBy = "team", cascade = CascadeType.PERSIST)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<Player> players;

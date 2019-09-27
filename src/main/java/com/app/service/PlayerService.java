@@ -5,12 +5,18 @@ import com.app.dto.TeamDto;
 import com.app.exception.AppException;
 import com.app.mapper.ModelMapper;
 import com.app.model.Player;
+import com.app.model.Team;
 import com.app.repository.PlayerRepository;
 import com.app.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,7 +36,8 @@ public class PlayerService {
         }
 
         Player player = ModelMapper.fromPlayerDtoToPlayer(playerDto);
-        return ModelMapper.fromPlayerToPlayerDto(player);
+        findTeamById(playerDto, player);
+        return ModelMapper.fromPlayerToPlayerDto(playerRepository.save(player));
     }
 
     public List<PlayerDto> findAll() {
@@ -65,10 +72,17 @@ public class PlayerService {
 
         player.setName(playerDto.getName() != null ? playerDto.getName() : null);
         player.setGoals(playerDto.getGoals() != null ? playerDto.getGoals() : null);
-        player.setTeam(playerDto.getTeamDto() != null ? ModelMapper.fromTeamDtoToTeam(playerDto.getTeamDto()) : null);
+        findTeamById(playerDto, player);
 
-        return ModelMapper.fromPlayerToPlayerDto(playerRepository.save(player));
+        return ModelMapper.fromPlayerToPlayerDto(player);
+    }
 
+    private void findTeamById(PlayerDto playerDto, Player player) {
+        Team team = teamRepository.findById(playerDto.getTeamDto().getId()).orElse(null);
+        if(team == null){
+            team = teamRepository.save(ModelMapper.fromTeamDtoToTeam(playerDto.getTeamDto()));
+        }
+        player.setTeam(team);
     }
 
     public PlayerDto updateOnlyName(Long id, Map<String, String> params) {
@@ -99,12 +113,21 @@ public class PlayerService {
         Player player = playerRepository.findById(id)
                 .orElseThrow(() -> new AppException("no player with id " + id));
 
-//        playerRepository
-//                .findAllByTeam_Id(player.getId())
-//                .forEach(p -> p.setTeam(null));
+        playerRepository
+                .findAllByTeam_Id(player.getId())
+                .forEach(p -> p.setTeam(null));
 
         playerRepository.delete(player);
         return ModelMapper.fromPlayerToPlayerDto(player);
+
+        /*
+                playerRepository
+                .findAllByTeam_Id(team.getId())
+                .forEach(p -> p.setTeam(null));
+
+        teamRepository.delete(team);
+        return ModelMapper.fromTeamToTeamDto(team);
+         */
     }
 
 }
